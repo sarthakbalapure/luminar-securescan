@@ -1,0 +1,21 @@
+ALTER TABLE "Scan"
+  ADD COLUMN IF NOT EXISTS "scanMode" TEXT NOT NULL DEFAULT 'baseline',
+  ADD COLUMN IF NOT EXISTS "scanner" TEXT NOT NULL DEFAULT 'internal',
+  ADD COLUMN IF NOT EXISTS "zapScanId" TEXT,
+  ADD COLUMN IF NOT EXISTS "zapSpiderId" TEXT,
+  ADD COLUMN IF NOT EXISTS "zapActiveScanId" TEXT,
+  ADD COLUMN IF NOT EXISTS "zapStatus" JSONB,
+  ADD COLUMN IF NOT EXISTS "errorMessage" TEXT;
+
+ALTER TABLE "Finding"
+  ADD COLUMN IF NOT EXISTS "source" TEXT NOT NULL DEFAULT 'internal',
+  ADD COLUMN IF NOT EXISTS "rawZapAlert" JSONB,
+  ADD COLUMN IF NOT EXISTS "zapRisk" TEXT,
+  ADD COLUMN IF NOT EXISTS "confidence" TEXT,
+  ADD COLUMN IF NOT EXISTS "solution" TEXT,
+  ADD COLUMN IF NOT EXISTS "reference" TEXT,
+  ADD COLUMN IF NOT EXISTS "cweId" TEXT,
+  ADD COLUMN IF NOT EXISTS "wascId" TEXT;
+
+CREATE INDEX IF NOT EXISTS "Scan_scanner_scanMode_idx" ON "Scan"("scanner", "scanMode");
+CREATE INDEX IF NOT EXISTS "Finding_source_idx" ON "Finding"("source");

@@ -1,0 +1,24 @@
+{
+  "name": "luminar-iq-securescan",
+  "private": true,
+  "version": "0.1.0",
+  "description": "LuminarIQ SecureScan defensive security audit SaaS platform.",
+  "scripts": {
+    "build": "corepack pnpm --filter @luminar-iq/shared --filter @luminar-iq/api --filter @luminar-iq/web --filter @luminar-iq/scanner-worker build",
+    "lint": "corepack pnpm --filter @luminar-iq/shared --filter @luminar-iq/api --filter @luminar-iq/web --filter @luminar-iq/scanner-worker lint",
+    "test": "corepack pnpm --filter @luminar-iq/shared --filter @luminar-iq/api --filter @luminar-iq/web --filter @luminar-iq/scanner-worker test",
+    "dev:api": "corepack pnpm --filter @luminar-iq/api start:dev",
+    "dev:web": "corepack pnpm --filter @luminar-iq/web dev",
+    "dev:worker": "corepack pnpm --filter @luminar-iq/scanner-worker dev"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "workers/*"
+  ],
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.4"
+}

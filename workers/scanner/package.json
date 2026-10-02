@@ -1,0 +1,23 @@
+{
+  "name": "@luminar-iq/scanner-worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@luminar-iq/shared": "workspace:*",
+    "@prisma/client": "^6.1.0",
+    "bullmq": "^5.34.4",
+    "undici": "^7.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

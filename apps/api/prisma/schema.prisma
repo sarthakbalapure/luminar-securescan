@@ -1,0 +1,532 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  PLATFORM_ADMIN
+}
+
+enum OrganizationMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum AssetType {
+  WEBSITE
+  WEB_APP
+  API
+  REPOSITORY
+  CLOUD
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+}
+
+enum RiskLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum ScanType {
+  WEBSITE_BASELINE
+  API_BASELINE
+  REPO_SCAN
+}
+
+enum ScanStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ScanJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum FindingStatus {
+  OPEN
+  IN_PROGRESS
+  RISK_ACCEPTED
+  FALSE_POSITIVE
+  FIXED
+  RETEST_REQUIRED
+}
+
+enum ReportType {
+  EXECUTIVE
+  TECHNICAL
+  FULL
+  EXECUTIVE_SUMMARY
+  TECHNICAL_FINDINGS
+  FULL_SECURITY_AUDIT
+  RETEST_REPORT
+}
+
+enum ReportStatus {
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+enum PlanCode {
+  PLUS
+  PRO
+  MAX
+}
+
+enum ReportLevel {
+  BASIC
+  DETAILED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum FixRequestStatus {
+  OPEN
+  IN_REVIEW
+  WAITING_FOR_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+model User {
+  id                    String               @id @default(uuid())
+  name                  String
+  email                 String               @unique
+  passwordHash          String
+  role                  UserRole             @default(USER)
+  isActive              Boolean              @default(true)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  ownedOrganizations    Organization[]       @relation("OrganizationOwner")
+  organizationMembers   OrganizationMember[]
+  createdScans          Scan[]               @relation("ScanCreator")
+  generatedReports      Report[]             @relation("ReportGenerator")
+  auditLogs             AuditLog[]
+  assignedSubscriptions SubscriptionPlan[]   @relation("SubscriptionAssigner")
+  requestedFixRequests  FixSupportRequest[]  @relation("FixRequestCustomer")
+  assignedFixRequests   FixSupportRequest[]  @relation("FixRequestAdmin")
+
+  @@index([isActive])
+}
+
+model Organization {
+  id                 String               @id @default(uuid())
+  name               String
+  slug               String               @unique
+  ownerId            String
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  owner              User                 @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  members            OrganizationMember[]
+  projects           Project[]
+  auditLogs          AuditLog[]
+  subscriptionPlans  SubscriptionPlan[]
+  subscriptionUsages SubscriptionUsage[]
+  fixSupportRequests FixSupportRequest[]
+  reports            Report[]
+
+  @@index([ownerId])
+  @@index([isActive])
+}
+
+model OrganizationMember {
+  id             String                 @id @default(uuid())
+  organizationId String
+  userId         String
+  role           OrganizationMemberRole @default(MEMBER)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId, role])
+}
+
+model Project {
+  id                 String              @id @default(uuid())
+  organizationId     String
+  name               String
+  description        String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assets             Asset[]
+  reports            Report[]
+  fixSupportRequests FixSupportRequest[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, createdAt])
+}
+
+model Asset {
+  id                  String              @id @default(uuid())
+  projectId           String
+  type                AssetType
+  name                String
+  url                 String
+  environment         String              @default("PRODUCTION")
+  businessCriticality String              @default("MEDIUM")
+  verifiedStatus      VerificationStatus  @default(UNVERIFIED)
+  riskLevel           RiskLevel           @default(INFO)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  project             Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scans               Scan[]
+  findings            Finding[]
+  apiSpecification    ApiSpecification?
+  reports             Report[]
+  fixSupportRequests  FixSupportRequest[]
+
+  @@unique([projectId, url])
+  @@index([projectId, type])
+  @@index([verifiedStatus])
+  @@index([riskLevel])
+}
+
+model ApiSpecification {
+  id            String   @id @default(uuid())
+  assetId       String   @unique
+  sourceType    String
+  specUrl       String?
+  baseUrl       String
+  rawContent    String
+  parsedJson    Json
+  endpointsJson Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([baseUrl])
+  @@index([sourceType])
+}
+
+model Scan {
+  id                 String              @id @default(uuid())
+  assetId            String
+  scanType           ScanType
+  scanMode           String              @default("baseline")
+  scanner            String              @default("internal")
+  zapScanId          String?
+  zapSpiderId        String?
+  zapActiveScanId    String?
+  zapStatus          Json?
+  scannerStatus      Json?
+  errorMessage       String?
+  rawResultPath      String?
+  targetUrl          String?
+  testedParameter    String?
+  httpMethod         String?
+  status             ScanStatus          @default(QUEUED)
+  startedAt          DateTime?
+  completedAt        DateTime?
+  securityScore      Decimal?            @db.Decimal(5, 2)
+  summaryJson        Json?
+  createdBy          String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  asset              Asset               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  creator            User                @relation("ScanCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  jobs               ScanJob[]
+  findings           Finding[]
+  reports            Report[]
+  fixSupportRequests FixSupportRequest[]
+
+  @@index([assetId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdBy])
+  @@index([scanner, scanMode])
+}
+
+model ScanJob {
+  id           String        @id @default(uuid())
+  scanId       String
+  jobType      String
+  status       ScanJobStatus @default(QUEUED)
+  attempts     Int           @default(0)
+  errorMessage String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  scan         Scan          @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId, status])
+  @@index([status, createdAt])
+}
+
+model Finding {
+  id                   String              @id @default(uuid())
+  scanId               String
+  assetId              String
+  title                String
+  description          String
+  severity             FindingSeverity
+  cvssScore            Decimal?            @db.Decimal(3, 1)
+  category             String
+  owaspMapping         String[]
+  cwe                  String?
+  evidenceSummary      String
+  businessImpact       String
+  technicalImpact      String
+  remediationSummary   String
+  source               String              @default("internal")
+  rawZapAlert          Json?
+  rawNucleiResult      Json?
+  templateId           String?
+  templateName         String?
+  matcherName          String?
+  extractedResults     String[]
+  curlCommand          String?
+  nucleiSeverity       String?
+  nucleiTags           String[]
+  nucleiClassification Json?
+  testedParameter      String?
+  injectionType        String?
+  sqlmapRisk           String?
+  sqlmapLevel          String?
+  rawSqlmapSummary     Json?
+  zapRisk              String?
+  confidence           String?
+  solution             String?
+  reference            String?
+  cweId                String?
+  wascId               String?
+  status               FindingStatus       @default(OPEN)
+  firstDetectedAt      DateTime            @default(now())
+  lastDetectedAt       DateTime            @default(now())
+  fixedAt              DateTime?
+  scan                 Scan                @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  asset                Asset               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  evidence             FindingEvidence[]
+  recommendations      Recommendation[]
+  fixSupportRequests   FixSupportRequest[]
+
+  @@index([scanId, severity])
+  @@index([assetId, status])
+  @@index([status, lastDetectedAt])
+  @@index([category])
+  @@index([source])
+}
+
+model FindingEvidence {
+  id              String   @id @default(uuid())
+  findingId       String
+  evidenceType    String
+  url             String?
+  requestSummary  String?
+  responseSummary String?
+  observedValue   String?
+  expectedValue   String?
+  rawJson         Json?
+  createdAt       DateTime @default(now())
+  finding         Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  @@index([findingId, evidenceType])
+}
+
+model Recommendation {
+  id                 String   @id @default(uuid())
+  findingId          String
+  recommendationType String
+  remediationText    String
+  codeExample        String?
+  retestSteps        String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  finding            Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  @@index([findingId])
+}
+
+model Report {
+  id              String       @id @default(uuid())
+  organizationId  String
+  projectId       String?
+  assetId         String
+  scanId          String
+  generatedBy     String
+  reportType      ReportType
+  title           String?
+  securityScore   Decimal?     @db.Decimal(5, 2)
+  riskRating      String?
+  severitySummary Json?
+  scannerSummary  Json?
+  reportStatus    ReportStatus @default(GENERATING)
+  fileUrl         String?
+  htmlSnapshot    String?
+  htmlPath        String?
+  pdfPath         String?
+  jsonPath        String?
+  csvPath         String?
+  fileSize        Int?
+  generatedAt     DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  errorMessage    String?
+  metadata        Json?
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project         Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  asset           Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  scan            Scan         @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  generator       User         @relation("ReportGenerator", fields: [generatedBy], references: [id], onDelete: Restrict)
+
+  @@unique([scanId, reportType])
+  @@index([organizationId, generatedAt])
+  @@index([assetId, generatedAt])
+  @@index([generatedBy, generatedAt])
+  @@index([reportStatus, generatedAt])
+  @@index([generatedAt])
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model SubscriptionPlan {
+  id                     String             @id @default(uuid())
+  organizationId         String
+  planCode               PlanCode           @default(PLUS)
+  planName               String
+  status                 SubscriptionStatus @default(ACTIVE)
+  assignedBy             String?
+  scanLimit              Int
+  assetLimit             Int
+  monthlyScanLimit       Int                @default(3)
+  monthlyFixRequestLimit Int                @default(0)
+  dailyScanEnabled       Boolean            @default(false)
+  reportLevel            ReportLevel        @default(BASIC)
+  validFrom              DateTime
+  validTo                DateTime?
+  notes                  String?
+  paymentProvider        String?
+  paymentStatus          String?
+  paymentReference       String?
+  isActive               Boolean            @default(true)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  organization           Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assigner               User?              @relation("SubscriptionAssigner", fields: [assignedBy], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, isActive])
+  @@index([planCode, isActive])
+  @@index([assignedBy])
+  @@index([validTo])
+}
+
+model PlanDefinition {
+  id                     String      @id @default(uuid())
+  code                   PlanCode    @unique
+  displayName            String
+  monthlyScanLimit       Int
+  reportLevel            ReportLevel
+  detailedRemediation    Boolean     @default(false)
+  dailyScanEnabled       Boolean     @default(false)
+  monthlyFixRequestLimit Int         @default(0)
+  isActive               Boolean     @default(true)
+  priceMonthly           Decimal     @default(0) @db.Decimal(10, 2)
+  currency               String      @default("INR")
+  description            String?
+  features               String[]     @default([])
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+}
+
+model SubscriptionUsage {
+  id              String       @id @default(uuid())
+  organizationId  String
+  planCode        PlanCode
+  monthKey        String
+  scansUsed       Int          @default(0)
+  fixRequestsUsed Int          @default(0)
+  dailyScanCount  Int          @default(0)
+  lastScanDate    DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, monthKey])
+  @@index([monthKey, planCode])
+}
+
+model FixSupportRequest {
+  id               String           @id @default(uuid())
+  organizationId   String
+  projectId        String?
+  assetId          String?
+  scanId           String?
+  findingId        String?
+  requestedBy      String
+  assignedToAdmin  String?
+  subject          String
+  message          String
+  severity         FindingSeverity?
+  status           FixRequestStatus @default(OPEN)
+  adminResponse    String?
+  customerResponse String?
+  attachments      String[]        @default([])
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  resolvedAt       DateTime?
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project          Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  asset            Asset?           @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  scan             Scan?            @relation(fields: [scanId], references: [id], onDelete: SetNull)
+  finding          Finding?         @relation(fields: [findingId], references: [id], onDelete: SetNull)
+  requester        User             @relation("FixRequestCustomer", fields: [requestedBy], references: [id], onDelete: Restrict)
+  assignedAdmin    User?            @relation("FixRequestAdmin", fields: [assignedToAdmin], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([requestedBy, createdAt])
+  @@index([assignedToAdmin, status])
+  @@index([findingId])
+}

@@ -1,0 +1,11 @@
+ALTER TABLE "Scan"
+  ADD COLUMN IF NOT EXISTS "targetUrl" TEXT,
+  ADD COLUMN IF NOT EXISTS "testedParameter" TEXT,
+  ADD COLUMN IF NOT EXISTS "httpMethod" TEXT;
+
+ALTER TABLE "Finding"
+  ADD COLUMN IF NOT EXISTS "testedParameter" TEXT,
+  ADD COLUMN IF NOT EXISTS "injectionType" TEXT,
+  ADD COLUMN IF NOT EXISTS "sqlmapRisk" TEXT,
+  ADD COLUMN IF NOT EXISTS "sqlmapLevel" TEXT,
+  ADD COLUMN IF NOT EXISTS "rawSqlmapSummary" JSONB;
