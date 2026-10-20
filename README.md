@@ -214,8 +214,6 @@ The worker is required to take queued scans to a terminal state. A healthy worke
 | --- | --- |
 | Web workspace | `http://127.0.0.1:3700` |
 | API | `http://127.0.0.1:4010` |
-| User login | `vishal@example.com` / `User@123` |
-| Administrator login | `admin@luminarsecure.com` / `Admin@123` |
 
 The seed creates a demo organization, project, website asset, completed scan, findings, report metadata, and a **Max** subscription. Seed credentials are for local development only; change or remove them before every non-demo deployment.
 
