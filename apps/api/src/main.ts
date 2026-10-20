@@ -17,6 +17,7 @@ type ResponseLike = {
   setHeader(name: string, value: string): void;
   on(event: "finish", listener: () => void): void;
 };
+type CorsOriginCallback = (error: Error | null, allowed?: boolean) => void;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -62,7 +63,7 @@ async function bootstrap() {
   const allowedOrigins = parseOrigins(config.get<string>("WEB_ORIGIN", "http://localhost:3010"));
   const isProduction = config.get<string>("NODE_ENV") === "production";
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: CorsOriginCallback) => {
       if (!origin || allowedOrigins.includes(origin) || (!isProduction && isLocalDevOrigin(origin))) {
         callback(null, true);
         return;

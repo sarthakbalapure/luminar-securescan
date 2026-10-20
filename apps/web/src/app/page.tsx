@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteFooter } from "../components/site-footer";
 
 export default function Page() {
   const features = [
@@ -106,6 +107,8 @@ export default function Page() {
         <h2 className="text-3xl font-semibold">Ready to review your security posture?</h2>
         <Link className="mt-6 inline-flex rounded-md bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950" href="/register">Start Free Security Scan</Link>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

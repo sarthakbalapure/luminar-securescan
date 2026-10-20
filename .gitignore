@@ -8,10 +8,11 @@ playwright-report/
 .env
 .env.*
 !.env.example
-pnpm-lock.yaml
 *.log
 tmp
 storage/reports/*
 tmp/reports/*
 apps/api/storage/reports/*
 apps/api/tmp/reports/*
+luminar-securescan/
+.pnpm-store/

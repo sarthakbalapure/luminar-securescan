@@ -24,6 +24,13 @@ if errorlevel 1 (
   exit /b 1
 )
 
+echo Generating Prisma client...
+call corepack pnpm --filter @luminar-iq/api prisma:generate
+if errorlevel 1 (
+  echo Database client generation failed.
+  exit /b 1
+)
+
 if /I "%~1"=="--seed" (
   echo Seeding demo data...
   call corepack pnpm --filter @luminar-iq/api prisma:seed

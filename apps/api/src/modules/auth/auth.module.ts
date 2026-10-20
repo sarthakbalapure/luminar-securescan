@@ -1,6 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { JwtModule } from "@nestjs/jwt";
+import { JwtModule, type JwtModuleOptions } from "@nestjs/jwt";
 import { PrismaService } from "../../prisma.service";
 import { AuthRateLimitGuard } from "./auth-rate-limit.guard";
 import { AuthController } from "./auth.controller";
@@ -16,9 +16,10 @@ import { UserWorkspaceGuard } from "./user-workspace.guard";
       useFactory: (config: ConfigService) => {
         const secret = config.get<string>("JWT_SECRET");
         if (!secret) throw new Error("JWT_SECRET is required.");
+        const expiresIn = config.get<string>("JWT_EXPIRES_IN", "1h") as NonNullable<JwtModuleOptions["signOptions"]>["expiresIn"];
         return {
           secret,
-          signOptions: { expiresIn: config.get<string>("JWT_EXPIRES_IN", "1h") }
+          signOptions: { expiresIn }
         };
       }
     })

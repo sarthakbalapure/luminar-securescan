@@ -75,7 +75,7 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
   const homeHref = isAdminRoute ? "/admin/dashboard" : "/dashboard";
 
   return (
-    <main className="min-h-screen">
+    <main className="flex min-h-screen flex-col bg-[#f7f8fa]">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href={homeHref} className="flex items-center gap-3">
@@ -96,7 +96,7 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
               <span className="block text-xs">{isAdminRole(user?.role) ? "Admin workspace" : "Customer workspace"}</span>
             </span>
             <Button
-              className="h-9 gap-2 bg-white px-3 text-ink ring-1 ring-slate-300 hover:bg-slate-50"
+              className="h-9 gap-2 bg-red-600 px-3.5 text-white font-medium shadow-sm hover:bg-red-700 active:bg-red-800 transition"
               onClick={handleLogout}
             >
               <LogOut size={16} aria-hidden="true" />
@@ -110,7 +110,7 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
       </header>
-      <div className="mx-auto max-w-7xl px-6 py-6">
+      <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
         {wrongWorkspace ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm font-medium text-amber-800">
             Please use the Admin Portal to sign in.
@@ -121,6 +121,22 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
           </div>
         ) : children}
       </div>
+      <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-xs text-slate-500">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 sm:flex-row">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-medium text-slate-700">LuminarIQ SecureScan</span>
+            <span>•</span>
+            <span>{isAdminRole(user?.role) ? "Admin Management Console" : "Customer Security Portal"}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-slate-500">
+            <Link href="/docs" className="hover:text-slate-800 transition">Documentation</Link>
+            <Link href="/reports" className="hover:text-slate-800 transition">Reports</Link>
+            <Link href="/settings" className="hover:text-slate-800 transition">Settings</Link>
+            <span>© {new Date().getFullYear()} LuminarIQ SoftSol Pvt. Ltd.</span>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

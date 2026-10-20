@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AssetType, type Prisma } from '@prisma/client';
 import { assertPublicHttpUrl, parseOpenApiSpec } from '@luminar-iq/shared';
+import { assertSaasScanTargetAllowed } from '../../utils/url-safety';
 import type { CreateAssetDto } from './dto/create-asset.dto';
 import { ProjectsRepository } from '../projects/projects.repository';
 import { AssetsRepository } from './assets.repository';
@@ -77,7 +78,10 @@ export class AssetsService {
   }
 
   private async fetchOpenApiSpec(specUrl: string) {
-    const url = assertPublicHttpUrl(specUrl, process.env.SCANNER_ALLOWED_PRIVATE_NETWORKS === 'true');
+    // The shared parser rejects obvious private literals. Resolve the hostname here as
+    // well because this is a server-side fetch and a public-looking hostname may map
+    // to a private or metadata address.
+    const url = await assertSaasScanTargetAllowed(specUrl);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), Number(process.env.OPENAPI_FETCH_TIMEOUT_MS ?? 8000));
     try {

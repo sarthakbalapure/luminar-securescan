@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteFooter } from "../../components/site-footer";
 
 const plans = [
   {
@@ -26,14 +27,14 @@ const plans = [
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-ink">
+    <main className="flex min-h-screen flex-col bg-slate-50 text-ink">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <Link href="/" className="font-semibold text-signal">LuminarIQ SecureScan</Link>
           <div className="flex gap-3 text-sm font-medium"><Link href="/login">Sign in</Link><Link href="/register" className="text-signal">Create account</Link></div>
         </div>
       </header>
-      <section className="mx-auto max-w-7xl px-6 py-14">
+      <section className="mx-auto w-full max-w-7xl flex-1 px-6 py-14">
         <p className="text-sm font-semibold text-signal">Simple security plans</p>
         <h1 className="mt-2 text-4xl font-semibold">Choose the coverage your team needs</h1>
         <p className="mt-3 max-w-2xl text-slate-600">Every plan supports authorized defensive scanning. Higher plans add scan capacity, detailed remediation, and hands-on support.</p>
@@ -52,6 +53,7 @@ export default function PricingPage() {
         </div>
         <p className="mt-8 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Payments are currently handled manually. Contact admin to activate or upgrade your plan.</p>
       </section>
+      <SiteFooter />
     </main>
   );
 }
